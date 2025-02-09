@@ -62,6 +62,10 @@ public class Book {
         }
     }
 
+    public String getIsbn() {
+        return isbn;
+    }
+
     private void getManualInfo() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter the title:");

@@ -19,4 +19,8 @@ public abstract class Recipient {
     public abstract Transaction depositBook(Book book);
     public abstract Transaction borrowBook(Book book);
     public abstract Transaction returnBook(Book book);
+
+    public long getId() {
+        return id;
+    }
 }

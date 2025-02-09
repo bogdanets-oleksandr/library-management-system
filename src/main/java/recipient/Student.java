@@ -2,6 +2,7 @@ package recipient;
 
 import book.Book;
 import transaction.Transaction;
+import transaction.TransactionTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,9 +21,11 @@ public class Student extends Recipient{
         overdueFine = new BigDecimal("0.00");
     }
 
+
     @Override
     public Transaction depositBook(Book book) {
-        return null;
+
+        return Transaction.createTransaction(this, book, TransactionTypes.DEPOSIT);
     }
 
     @Override
@@ -33,15 +36,13 @@ public class Student extends Recipient{
         } else {
             booksHolding.put(book, LocalDateTime.now());
         }
-        //TODO Add transaction as the return type
-        return null;
+        return Transaction.createTransaction(this, book, TransactionTypes.BORROW);
     }
 
     @Override
     public Transaction returnBook(Book book) {
-        booksHolding.remove(book);
 
-        //TODO Add transaction as the return type
-        return null;
+        booksHolding.remove(book);
+        return Transaction.createTransaction(this, book, TransactionTypes.RETURN);
     }
 }
