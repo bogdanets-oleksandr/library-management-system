@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.text.StringSubstitutor;
 
 import java.io.IOException;
@@ -24,6 +25,7 @@ public class Book {
 
     public Book(String isbn) {
 
+        isbn = formatISBN(isbn);
         HashMap<String, String> map = new HashMap<>();
         map.put("ISBN", isbn);
         StringSubstitutor sub = new StringSubstitutor(map);
@@ -75,6 +77,11 @@ public class Book {
         if (scanner.next().charAt(0) == 'N' || scanner.next().charAt(0) == 'n') {
             getManualInfo();
         }
+    }
+
+    private String formatISBN(String isbn) {
+
+        return RegExUtils.replaceAll(isbn, "[^0-9]", "");
     }
 
     @Override
