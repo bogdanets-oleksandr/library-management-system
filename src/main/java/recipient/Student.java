@@ -32,7 +32,6 @@ public class Student extends Recipient{
     public Transaction borrowBook(Book book) {
         if (!overdueFine.equals(ZERO)) {
             System.out.println("To borrow a book " + overdueFine + " of overdue fines must be payed first");
-            //TODO Add a form of payment details for the fine
         } else {
             booksHolding.put(book, LocalDateTime.now());
         }
