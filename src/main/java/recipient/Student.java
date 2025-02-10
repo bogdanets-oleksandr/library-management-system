@@ -15,8 +15,8 @@ public class Student extends Recipient{
     Map<Book, LocalDateTime> booksHolding;
     BigDecimal overdueFine;
 
-    public Student(String firstName, String lastName) {
-        super(firstName, lastName);
+    public Student(String firstName, String lastName, int id) {
+        super(firstName, lastName, id);
         booksHolding = new HashMap<>();
         overdueFine = new BigDecimal("0.00");
     }

@@ -4,23 +4,22 @@ import book.Book;
 import transaction.Transaction;
 
 public abstract class Recipient {
-    private static long ID_COUNT = 0;
     private String firstName;
     private String lastName;
 
-    private final long id;
+    private final int id;
 
-    public Recipient(String firstName, String lastName) {
+    public Recipient(String firstName, String lastName, int id) {
         this.firstName = firstName;
         this.lastName = lastName;
-        id = ID_COUNT++;
+        this.id = id;
     }
 
     public abstract Transaction depositBook(Book book);
     public abstract Transaction borrowBook(Book book);
     public abstract Transaction returnBook(Book book);
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 }

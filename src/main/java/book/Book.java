@@ -16,7 +16,7 @@ import java.util.Scanner;
 
 public class Book {
     private static final String templateURL = "https://openlibrary.org/api/books?bibkeys=ISBN:${ISBN}&format=json&jscmd=data";
-
+    private int id;
     private String isbn;
     private String title;
 
@@ -64,6 +64,9 @@ public class Book {
 
     public String getIsbn() {
         return isbn;
+    }
+    public int getId() {
+        return id;
     }
 
     private void getManualInfo() {
