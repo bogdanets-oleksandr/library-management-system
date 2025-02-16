@@ -15,7 +15,7 @@ public abstract class Recipient {
         this.id = id;
     }
 
-    public abstract Transaction depositBook(Book book);
+    public abstract Transaction depositBook(String isbn);
     public abstract Transaction borrowBook(Book book);
     public abstract Transaction returnBook(Book book);
 

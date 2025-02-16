@@ -23,8 +23,8 @@ public class Student extends Recipient{
 
 
     @Override
-    public Transaction depositBook(Book book) {
-
+    public Transaction depositBook(String isbn) {
+        Book book = new Book(isbn);
         return Transaction.createTransaction(this, book, TransactionTypes.DEPOSIT);
     }
 
