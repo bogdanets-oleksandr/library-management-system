@@ -5,4 +5,5 @@ import transaction.Transaction;
 public interface TransactionHandler {
 
     long handleTransaction(Transaction transaction);
+
 }

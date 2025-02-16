@@ -22,4 +22,12 @@ public abstract class Recipient {
     public int getId() {
         return id;
     }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
 }
