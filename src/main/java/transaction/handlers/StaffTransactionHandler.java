@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 public class StaffTransactionHandler implements TransactionHandler{
     private static final String checkStaffAuthorization = "SELECT * FROM authorization_staff WHERE username = ?" +
-            "AND password_hash = SHA2(?, 256);";
+            "AND password = SHA2(?, 256);";
     private static final String insertTransactionQuery = "INSERT INTO library.transactions (recipient_id, book_id, transaction_type) VALUES (? ? ?)";
     private static final String insertStudentQuery = "INSERT INTO library.recipients (first_name, last_name) VALUES (? SHA2(?, 256))";
     private static final String insertStudentAuthorization = "INSERT INTO authorization_student (username, password) VALUES (? ?)";
