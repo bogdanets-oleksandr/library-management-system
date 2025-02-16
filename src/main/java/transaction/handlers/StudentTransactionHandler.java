@@ -7,18 +7,22 @@ import java.time.LocalDate;
 import java.util.Scanner;
 
 public class StudentTransactionHandler implements TransactionHandler{
-    private static final String checkStudentAuthorization = "SELECT * FROM authorization_student WHERE username = ?" +
+    private static final String checkStudentAuthorization = "SELECT * FROM library.authorization_students WHERE username = ?" +
             "AND password = SHA2(?, 256);";
-    private static final String insertTransactionQuery = "INSERT INTO library.transactions (recipient_id, book_id, transaction_type) VALUES (? ? ?)";
-    private static final String updateStudentPasswordQuery = "UPDATE library.authorization_student SET password = SHA2(?, 256) " +
+    private static final String insertTransactionQuery = "INSERT INTO library.transactions (recipient_id, book_id, transaction_type) VALUES (?, ?, ?)";
+    private static final String updateStudentPasswordQuery = "UPDATE library.authorization_students SET password = SHA2(?, 256) " +
             "WHERE username = ?";
     private static final String insertBookQuery = "INSERT INTO library.books (book_isbn) VALUES (?)";
     private static final String updateBookQuery = "UPDATE library.books SET book_holder=?, return_date=? WHERE book_id=?";
-    private final String url = System.getenv("DB_URL");
+    private static final String findBorrowedBookQuery = "SELECT * FROM library.books WHERE book_isbn = ? AND book_holder = ?";
+    private static final String findAvailableBookQuery = "SELECT * FROM library.books WHERE book_isbn = ? AND book_holder IS NULL";
+    private final String url = "jdbc:mysql://localhost/library";
     private String username;
     private String password;
 
     public StudentTransactionHandler(String username, String password) throws SQLException {
+        this.username = username;
+        this.password = password;
         Connection conn = getConnection();
         if (conn == null) {
             System.out.println("Couldn't connect, try later");
@@ -28,10 +32,7 @@ public class StudentTransactionHandler implements TransactionHandler{
         ps.setString(1, username);
         ps.setString(2, password);
         ResultSet rs = ps.executeQuery();
-        if (rs.next()) {
-            this.username = username;
-            this.password = password;
-        } else {
+        if (!rs.next()) {
             throw new RuntimeException("Couldn't find a user with these credentials");
         }
         conn.close();
@@ -47,37 +48,59 @@ public class StudentTransactionHandler implements TransactionHandler{
         }
 
         try (conn){
+            int bookId = 0;
             switch(transaction.getType()) {
                 case BORROW -> {
+                    PreparedStatement psId = conn.prepareStatement(findAvailableBookQuery);
+                    psId.setString(1, transaction.getBook().getIsbn());
+                    ResultSet rs = psId.executeQuery();
+                    if (rs.next()) {
+                        bookId = rs.getInt(1);
+                        System.out.println(bookId);
+                    }
                     PreparedStatement ps1 = conn.prepareStatement(updateBookQuery);
                     ps1.setInt(1, transaction.getRecipientId());
                     ps1.setDate(2, Date.valueOf(LocalDate.now().plusMonths(1)));
-                    ps1.setInt(3, transaction.getBook().getId());
-                    ps1.execute();
+                    ps1.setInt(3, bookId);
+                    ps1.executeUpdate();
                 }
                 case DEPOSIT -> {
-                    PreparedStatement ps1 = conn.prepareStatement(insertBookQuery);
+                    PreparedStatement ps1 = conn.prepareStatement(insertBookQuery, Statement.RETURN_GENERATED_KEYS);
                     ps1.setString(1, transaction.getBook().getIsbn());
-                    ps1.execute();
+                    ps1.executeUpdate(); // Use executeUpdate() instead of executeQuery()
+                    ResultSet rs = ps1.getGeneratedKeys(); // Use getGeneratedKeys()
+                    if (rs.next()) {
+                        bookId = rs.getInt(1);
+                    }
                 }
                 case RETURN -> {
+                    PreparedStatement psId = conn.prepareStatement(findBorrowedBookQuery);
+                    psId.setString(1, transaction.getBook().getIsbn());
+                    psId.setInt(2, transaction.getRecipientId());
+                    ResultSet rs = psId.executeQuery();
+                    if (rs.next()) {
+                        bookId = rs.getInt("book_id");
+                        System.out.println(bookId);
+                    }
                     PreparedStatement ps1 = conn.prepareStatement(updateBookQuery);
-                    ps1.setInt(1, 0);
+                    ps1.setNull(1, Types.INTEGER);
                     ps1.setDate(2, null);
-                    ps1.setInt(3, transaction.getBook().getId());
-                    ps1.execute();
+                    ps1.setInt(3, bookId);
+                    ps1.executeUpdate();
                 }
             }
             PreparedStatement ps = conn.prepareStatement(insertTransactionQuery, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, transaction.getRecipientId());
-            ps.setInt(2, transaction.getBook().getId());
+            ps.setInt(2, bookId);
             ps.setString(3, transaction.getType().toString());
-            ResultSet rs = ps.executeQuery();
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
             if (rs.next()) {
-                id = rs.getLong(1);
+                id = rs.getInt(1);
             }
         } catch (SQLException e) {
             System.out.println("Something went wrong, please try later or contact an admin");
+            throw new RuntimeException(e);
         }
         return id;
     }

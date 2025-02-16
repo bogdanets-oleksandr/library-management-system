@@ -11,11 +11,12 @@ public class StaffTransactionHandler implements TransactionHandler{
             "AND password = SHA2(?, 256);";
     private static final String insertTransactionQuery = "INSERT INTO library.transactions (recipient_id, book_id, transaction_type) VALUES (? ? ?)";
     private static final String insertStudentQuery = "INSERT INTO library.recipients (first_name, last_name) VALUES (? SHA2(?, 256))";
-    private static final String insertStudentAuthorization = "INSERT INTO authorization_student (username, password) VALUES (? ?)";
+    private static final String insertStudentAuthorization = "INSERT INTO authorization_student (username, password) VALUES (?, ?)";
     private static final String insertBookQuery = "INSERT INTO library.books (book_isbn) VALUES (?)";
     private static final String updateBookQuery = "UPDATE library.books SET book_holder=?, return_date=? WHERE book_id=?";
+    private static final String findBookQuery = "SELECT * FROM library.books WHERE isbn = ? AND book_holder = ?";
 
-    private final String url = System.getenv("DB_URL");
+    private final String url = "jdbc:mysql://localhost/library";
     private String username;
     private String password;
 
@@ -47,30 +48,47 @@ public class StaffTransactionHandler implements TransactionHandler{
         }
 
         try {
+            int bookId = 0;
             switch(transaction.getType()) {
                 case BORROW -> {
+                    PreparedStatement psId = conn.prepareStatement(findBookQuery);
+                    psId.setString(1, transaction.getBook().getIsbn());
+                    ResultSet rs = psId.executeQuery();
+                    if (rs.next()) {
+                        bookId = rs.getInt(1);
+                    }
                         PreparedStatement ps1 = conn.prepareStatement(updateBookQuery);
                         ps1.setInt(1, transaction.getRecipientId());
                         ps1.setDate(2, Date.valueOf(LocalDate.now().plusMonths(1)));
-                        ps1.setInt(3, transaction.getBook().getId());
+                        ps1.setInt(3, bookId);
                         ps1.execute();
                 }
                 case DEPOSIT -> {
-                        PreparedStatement ps1 = conn.prepareStatement(insertBookQuery);
-                        ps1.setString(1, transaction.getBook().getIsbn());
-                        ps1.execute();
+                    PreparedStatement ps1 = conn.prepareStatement(insertBookQuery, Statement.RETURN_GENERATED_KEYS);
+                    ps1.setString(1, transaction.getBook().getIsbn());
+                    ResultSet rs = ps1.executeQuery();
+                    if (rs.next()) {
+                        id = rs.getInt(1);
+                    }
                 }
                 case RETURN -> {
-                        PreparedStatement ps1 = conn.prepareStatement(updateBookQuery);
-                        ps1.setInt(1, 0);
-                        ps1.setDate(2, null);
-                        ps1.setInt(3, transaction.getBook().getId());
-                        ps1.execute();
+                    PreparedStatement psId = conn.prepareStatement(findBookQuery);
+                    psId.setString(1, transaction.getBook().getIsbn());
+                    psId.setInt(2, transaction.getRecipientId());
+                    ResultSet rs = psId.executeQuery();
+                    if (rs.next()) {
+                        bookId = rs.getInt(1);
+                    }
+                    PreparedStatement ps1 = conn.prepareStatement(updateBookQuery);
+                    ps1.setInt(1, 0);
+                    ps1.setDate(2, null);
+                    ps1.setInt(3, bookId);
+                    ps1.execute();
                 }
             }
                 PreparedStatement ps = conn.prepareStatement(insertTransactionQuery, Statement.RETURN_GENERATED_KEYS);
                 ps.setInt(1, transaction.getRecipientId());
-                ps.setInt(2, transaction.getBook().getId());
+                ps.setInt(2, bookId);
                 ps.setString(3, transaction.getType().toString());
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
